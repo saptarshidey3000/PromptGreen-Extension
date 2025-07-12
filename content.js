@@ -1,316 +1,180 @@
-// PromptGreen Content Script - Injects optimization button into webpages
-(function() {
+// PromptGreen Content Script - Enhancing textareas with an Optimize button
+(function () {
   'use strict';
 
-  // Configuration
   const CONFIG = {
-    checkInterval: 2000, // Check for textareas every 2 seconds
-    buttonId: 'promptgreen-btn',
-    minTextareaHeight: 50, // Minimum height to show button
-    debounceDelay: 300
+    checkInterval: 2000,
+    buttonClass: 'promptgreen-optimize-btn',
+    minTextareaHeight: 50,
+    notificationDuration: 4000,
   };
 
   let isProcessing = false;
-  let checkInterval;
+  let observer;
 
-  // Initialize the content script
+  // Run initialization
   function init() {
-    console.log('PromptGreen: Content script initialized');
-    
-    // Start checking for textareas
-    checkInterval = setInterval(checkForTextareas, CONFIG.checkInterval);
-    
-    // Also check immediately
-    checkForTextareas();
-    
-    // Clean up when page unloads
-    window.addEventListener('beforeunload', cleanup);
+    console.log('✅ PromptGreen Content Script Initialized');
+    injectButtonsIntoTextareas();
+    observeDOMChanges();
   }
 
-  /**
-   * Check for textareas on the page and add optimize buttons
-   */
-  function checkForTextareas() {
-    const textareas = document.querySelectorAll('textarea');
-    
-    textareas.forEach(textarea => {
-      if (shouldAddButton(textarea)) {
-        addOptimizeButton(textarea);
+  // Observe dynamic content changes for SPAs
+  function observeDOMChanges() {
+    observer = new MutationObserver(() => {
+      injectButtonsIntoTextareas();
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+  }
+
+  // Scan all eligible textareas
+  function injectButtonsIntoTextareas() {
+    document.querySelectorAll('textarea:not([data-promptgreen-attached])').forEach(textarea => {
+      const rect = textarea.getBoundingClientRect();
+
+      if (rect.height >= CONFIG.minTextareaHeight && !textarea.disabled && !textarea.readOnly && textarea.offsetParent) {
+        addButtonBelowTextarea(textarea);
       }
     });
   }
 
-  /**
-   * Determine if we should add a button to this textarea
-   */
-  function shouldAddButton(textarea) {
-    // Skip if button already exists
-    if (textarea.dataset.promptgreenProcessed) {
-      return false;
-    }
+  // Add Optimize button below a textarea
+  function addButtonBelowTextarea(textarea) {
+    textarea.dataset.promptgreenAttached = 'true';
 
-    // Skip if textarea is too small
-    const rect = textarea.getBoundingClientRect();
-    if (rect.height < CONFIG.minTextareaHeight) {
-      return false;
-    }
+    const wrapper = document.createElement('div');
+    wrapper.className = 'promptgreen-button-wrapper';
+    wrapper.style.marginTop = '8px';
 
-    // Skip if textarea is hidden
-    if (textarea.offsetParent === null) {
-      return false;
-    }
-
-    // Skip if textarea is read-only or disabled
-    if (textarea.readOnly || textarea.disabled) {
-      return false;
-    }
-
-    return true;
-  }
-
-  /**
-   * Add optimize button to a textarea
-   */
-  function addOptimizeButton(textarea) {
-    // Mark as processed
-    textarea.dataset.promptgreenProcessed = 'true';
-
-    // Create button container
-    const buttonContainer = document.createElement('div');
-    buttonContainer.className = 'promptgreen-button-container';
-    buttonContainer.style.cssText = `
-      position: relative;
-      display: inline-block;
-      margin-top: 8px;
-    `;
-
-    // Create the optimize button
     const button = document.createElement('button');
-    button.id = CONFIG.buttonId + '-' + Date.now();
-    button.innerHTML = '🌱 Optimize';
-    button.className = 'promptgreen-optimize-btn';
-    button.style.cssText = `
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      color: white;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 500;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      transition: all 0.3s ease;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      z-index: 1000;
-      position: relative;
-    `;
-
-    // Add hover effects
-    button.addEventListener('mouseenter', () => {
-      if (!button.disabled) {
-        button.style.background = 'linear-gradient(135deg, #059669 0%, #047857 100%)';
-        button.style.transform = 'translateY(-1px)';
-        button.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
-      }
+    button.className = CONFIG.buttonClass;
+    button.textContent = '🌱 Optimize';
+    Object.assign(button.style, {
+      background: 'linear-gradient(135deg, #10b981, #059669)',
+      color: '#fff',
+      border: 'none',
+      padding: '8px 16px',
+      borderRadius: '6px',
+      cursor: 'pointer',
+      fontSize: '13px',
+      fontWeight: '500',
+      fontFamily: 'inherit',
+      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
     });
 
-    button.addEventListener('mouseleave', () => {
-      if (!button.disabled) {
-        button.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
-        button.style.transform = 'translateY(0)';
-        button.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
-      }
-    });
-
-    // Add click handler
-    button.addEventListener('click', (e) => {
+    button.onclick = async (e) => {
       e.preventDefault();
-      e.stopPropagation();
-      handleOptimizeClick(textarea, button);
-    });
+      await handleOptimize(textarea, button);
+    };
 
-    // Add button to container
-    buttonContainer.appendChild(button);
-
-    // Insert button after textarea
-    textarea.parentElement.insertBefore(buttonContainer, textarea.nextSibling);
-
-    console.log('PromptGreen: Button added to textarea');
+    wrapper.appendChild(button);
+    textarea.insertAdjacentElement('afterend', wrapper);
   }
 
-  /**
-   * Handle optimize button click
-   */
-  async function handleOptimizeClick(textarea, button) {
+  // Optimization handler
+  async function handleOptimize(textarea, button) {
     const prompt = textarea.value.trim();
 
-    if (!prompt) {
-      showNotification('Please enter some text to optimize', 'warning');
-      return;
-    }
-
-    if (isProcessing) {
-      return;
-    }
+    if (!prompt) return showToast('⚠️ Please enter some text', 'warning');
+    if (isProcessing) return;
 
     isProcessing = true;
     setButtonLoading(button, true);
 
     try {
-      // Call the API directly with your endpoint
-      const result = await optimizePromptAPI(prompt);
-      
-      // Update textarea with optimized prompt
-      textarea.value = result.optimizedPrompt;
-      
-      // Trigger input event to notify the website
-      textarea.dispatchEvent(new Event('input', { bubbles: true }));
-      
-      // Show success notification
-      showNotification(
-        `Prompt optimized! Saved ${result.tokensSaved} tokens and ${result.co2Reduced}g CO₂`,
-        'success'
-      );
+      const { optimizedPrompt, tokensSaved, co2Reduced } = await fetchOptimizedPrompt(prompt);
 
-    } catch (error) {
-      console.error('PromptGreen: Optimization failed:', error);
-      showNotification(`Optimization failed: ${error.message}`, 'error');
+      textarea.value = optimizedPrompt;
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+      showToast(`✅ Saved ${tokensSaved} tokens, ${co2Reduced}g CO₂`, 'success');
+    } catch (err) {
+      console.error('Optimize error:', err);
+      showToast(`❌ ${err.message}`, 'error');
     } finally {
       isProcessing = false;
       setButtonLoading(button, false);
     }
   }
 
-  /**
-   * API call function for content script
-   */
-  async function optimizePromptAPI(prompt) {
-    try {
-      const response = await fetch('https://7d1538468f2e.ngrok-free.app/optimize', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true'
-        },
-        body: JSON.stringify({ prompt: prompt.trim() })
-      });
+  // API call
+  async function fetchOptimizedPrompt(prompt) {
+    const response = await fetch('https://7d1538468f2e.ngrok-free.app/optimize', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true',
+      },
+      body: JSON.stringify({ prompt }),
+    });
 
-      if (!response.ok) {
-        throw new Error(`API Error: ${response.status} ${response.statusText}`);
-      }
+    if (!response.ok) throw new Error(`API Error ${response.status}`);
 
-      const data = await response.json();
-      
-      return {
-        optimizedPrompt: data.optimizedPrompt || prompt,
-        tokensSaved: data.tokensSaved || 0,
-        co2Reduced: data.co2Reduced || 0,
-        success: true
-      };
-    } catch (error) {
-      console.error('API Request Error:', error);
-      throw new Error(error.message || 'Failed to optimize prompt');
-    }
+    const data = await response.json();
+    return {
+      optimizedPrompt: data.optimizedPrompt || prompt,
+      tokensSaved: data.tokensSaved || 0,
+      co2Reduced: data.co2Reduced || 0,
+    };
   }
 
-  /**
-   * Set button loading state
-   */
-  function setButtonLoading(button, isLoading) {
-    if (isLoading) {
-      button.disabled = true;
-      button.innerHTML = '⏳ Optimizing...';
-      button.style.background = '#d1d5db';
-      button.style.cursor = 'not-allowed';
-    } else {
-      button.disabled = false;
-      button.innerHTML = '🌱 Optimize';
-      button.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
-      button.style.cursor = 'pointer';
-    }
+  // Button loading UI
+  function setButtonLoading(button, loading) {
+    button.disabled = loading;
+    button.textContent = loading ? '⏳ Optimizing...' : '🌱 Optimize';
+    button.style.opacity = loading ? '0.7' : '1';
   }
 
-  /**
-   * Show notification to user
-   */
-  function showNotification(message, type = 'info') {
-    // Remove existing notification
-    const existingNotification = document.querySelector('.promptgreen-notification');
-    if (existingNotification) {
-      existingNotification.remove();
-    }
+  // Toast notification
+  function showToast(msg, type = 'info') {
+    const existing = document.querySelector('.promptgreen-toast');
+    if (existing) existing.remove();
 
-    // Create notification element
-    const notification = document.createElement('div');
-    notification.className = 'promptgreen-notification';
-    notification.textContent = message;
-    
-    // Set styles based on type
-    const colors = {
-      success: { bg: '#d1fae5', border: '#a7f3d0', text: '#047857' },
-      error: { bg: '#fef2f2', border: '#fca5a5', text: '#dc2626' },
-      warning: { bg: '#fef3c7', border: '#fcd34d', text: '#d97706' },
-      info: { bg: '#dbeafe', border: '#93c5fd', text: '#1d4ed8' }
+    const toast = document.createElement('div');
+    toast.className = 'promptgreen-toast';
+    toast.textContent = msg;
+
+    const styles = {
+      success: { bg: '#d1fae5', color: '#047857' },
+      error: { bg: '#fee2e2', color: '#b91c1c' },
+      warning: { bg: '#fef9c3', color: '#92400e' },
+      info: { bg: '#e0f2fe', color: '#0369a1' },
     };
 
-    const color = colors[type] || colors.info;
-    
-    notification.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: ${color.bg};
-      color: ${color.text};
-      border: 2px solid ${color.border};
-      padding: 12px 20px;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 500;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      z-index: 10000;
-      max-width: 350px;
-      word-wrap: break-word;
-      animation: slideIn 0.3s ease;
-    `;
+    const style = styles[type] || styles.info;
 
-    // Add CSS animation keyframes
-    if (!document.querySelector('#promptgreen-styles')) {
-      const style = document.createElement('style');
-      style.id = 'promptgreen-styles';
-      style.textContent = `
-        @keyframes slideIn {
-          from { transform: translateX(100%); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
-        }
-      `;
-      document.head.appendChild(style);
-    }
+    Object.assign(toast.style, {
+      position: 'fixed',
+      top: '20px',
+      right: '20px',
+      zIndex: 9999,
+      padding: '12px 20px',
+      background: style.bg,
+      color: style.color,
+      fontSize: '14px',
+      fontWeight: '500',
+      borderRadius: '8px',
+      boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+    });
 
-    // Add notification to page
-    document.body.appendChild(notification);
+    document.body.appendChild(toast);
 
-    // Remove notification after 4 seconds
     setTimeout(() => {
-      if (notification.parentNode) {
-        notification.remove();
-      }
-    }, 4000);
+      toast.remove();
+    }, CONFIG.notificationDuration);
   }
 
-  /**
-   * Cleanup function
-   */
-  function cleanup() {
-    if (checkInterval) {
-      clearInterval(checkInterval);
-    }
-  }
-
-  // Initialize when DOM is ready
+  // Init after DOM ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
     init();
   }
+
+  // Expose for debugging
+  window.PromptGreenContent = { init };
+
 })();
