@@ -1,12 +1,20 @@
 {
   "manifest_version": 3,
   "name": "PromptGreen - AI Prompt Optimizer",
-  "description": "Optimize AI prompts and reduce carbon footprint in real-time.",
-  "version": "1.0",
-  "permissions": ["scripting", "activeTab", "storage"],
-  "host_permissions": ["<all_urls>"],
+  "description": "Optimize AI prompts and reduce carbon footprint in real-time with intelligent suggestions.",
+  "version": "1.0.0",
+  "permissions": [
+    "scripting",
+    "activeTab",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://7d1538468f2e.ngrok-free.app/*",
+    "<all_urls>"
+  ],
   "action": {
     "default_popup": "popup/popup.html",
+    "default_title": "PromptGreen - Optimize AI Prompts",
     "default_icon": {
       "16": "icons/pgextensionlogo.png",
       "48": "icons/pgextensionlogo.png",
@@ -23,7 +31,15 @@
       "run_at": "document_idle"
     }
   ],
+  "web_accessible_resources": [
+    {
+      "resources": ["utils/api.js"],
+      "matches": ["<all_urls>"]
+    }
+  ],
   "icons": {
+    "16": "icons/pgextensionlogo.png",
+    "48": "icons/pgextensionlogo.png",
     "128": "icons/pgextensionlogo.png"
   }
 }

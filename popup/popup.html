@@ -1,18 +1,127 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8" />
-    <title>PromptGreen</title>
-    <link rel="stylesheet" href="popup.css" />
-  </head>
-  <body>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PromptGreen - AI Prompt Optimizer</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
     <div class="container">
-      <h1>🌱 PromptGreen</h1>
-      <p>Optimize your AI prompts and reduce CO₂ emissions.</p>
-      <textarea id="userPrompt" placeholder="Paste your prompt here..."></textarea>
-      <button id="optimizeBtn">Optimize Prompt</button>
-      <div id="result"></div>
+        <!-- Header Section -->
+        <div class="header">
+            <div class="logo">
+                <span class="logo-icon">🌱</span>
+                <h1>PromptGreen</h1>
+            </div>
+            <div class="version">v1.0.0</div>
+        </div>
+
+        <!-- Description -->
+        <p class="description">
+            Optimize your AI prompts to reduce tokens and CO₂ emissions
+        </p>
+
+        <!-- Input Section -->
+        <div class="input-section">
+            <label for="userPrompt">Enter your prompt:</label>
+            <textarea 
+                id="userPrompt" 
+                placeholder="Paste your AI prompt here to optimize it..."
+                rows="4"
+            ></textarea>
+            <div class="char-count">
+                <span id="charCount">0</span> characters
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="button-group">
+            <button id="optimizeBtn" class="btn-primary">
+                <span class="btn-icon">🌱</span>
+                <span class="btn-text">Optimize Prompt</span>
+            </button>
+            <button id="clearBtn" class="btn-secondary">
+                <span class="btn-icon">🗑️</span>
+                <span class="btn-text">Clear</span>
+            </button>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultSection" class="result-section hidden">
+            <h3>✨ Optimized Result</h3>
+            
+            <!-- Metrics -->
+            <div class="metrics">
+                <div class="metric">
+                    <span class="metric-icon">🔢</span>
+                    <div class="metric-content">
+                        <div class="metric-value" id="tokensSaved">0</div>
+                        <div class="metric-label">Tokens Saved</div>
+                    </div>
+                </div>
+                <div class="metric">
+                    <span class="metric-icon">🌍</span>
+                    <div class="metric-content">
+                        <div class="metric-value" id="co2Reduced">0g</div>
+                        <div class="metric-label">CO₂ Reduced</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Optimized Text -->
+            <div class="optimized-text-container">
+                <label for="optimizedText">Optimized Prompt:</label>
+                <textarea 
+                    id="optimizedText" 
+                    readonly 
+                    rows="4"
+                    class="optimized-textarea"
+                ></textarea>
+            </div>
+
+            <!-- Action Buttons for Results -->
+            <div class="result-actions">
+                <button id="copyBtn" class="btn-success">
+                    <span class="btn-icon">📋</span>
+                    <span class="btn-text">Copy to Clipboard</span>
+                </button>
+                <button id="useBtn" class="btn-info">
+                    <span class="btn-icon">📝</span>
+                    <span class="btn-text">Use This Prompt</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="loading-state hidden">
+            <div class="spinner"></div>
+            <p>Optimizing your prompt...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorState" class="error-state hidden">
+            <div class="error-icon">⚠️</div>
+            <p id="errorMessage">Something went wrong. Please try again.</p>
+            <button id="retryBtn" class="btn-secondary">Try Again</button>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="footer-stats">
+                <span class="footer-stat">
+                    <span class="stat-icon">💡</span>
+                    <span id="totalOptimizations">0</span> prompts optimized
+                </span>
+            </div>
+            <div class="footer-links">
+                <a href="#" id="settingsLink">Settings</a>
+                <a href="#" id="helpLink">Help</a>
+            </div>
+        </div>
     </div>
+
+    <!-- Include the popup JavaScript -->
     <script src="popup.js"></script>
-  </body>
+</body>
 </html>
