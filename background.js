@@ -3,7 +3,7 @@
 
 const EXTENSION_CONFIG = {
     version: '1.0.0',
-    apiBaseUrl: 'https://7d1538468f2e.ngrok-free.app/optimize',
+    apiBaseUrl: 'https://9ec73d7e3f4e.ngrok-free.app//optimize',
     maxRetries: 3,
     retryDelay: 1000
 };

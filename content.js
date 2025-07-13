@@ -102,7 +102,7 @@
 
   // API call
   async function fetchOptimizedPrompt(prompt) {
-    const response = await fetch('https://7d1538468f2e.ngrok-free.app/optimize', {
+    const response = await fetch('https://9ec73d7e3f4e.ngrok-free.app/optimize', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

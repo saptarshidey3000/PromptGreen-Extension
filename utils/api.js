@@ -1,6 +1,6 @@
 // API configuration
 const API_CONFIG = {
-  baseURL: "https://7d1538468f2e.ngrok-free.app/optimize", // Your actual API URL
+  baseURL: "https://9ec73d7e3f4e.ngrok-free.app//optimize", // Your actual API URL
   timeout: 30000, // 30 seconds timeout
   headers: {
     "Content-Type": "application/json",

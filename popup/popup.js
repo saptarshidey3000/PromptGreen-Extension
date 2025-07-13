@@ -97,13 +97,13 @@
 
   async function optimizePrompt(prompt) {
     try {
-      const response = await fetch('https://7d1538468f2e.ngrok-free.app/optimize', {
+      const response = await fetch('https://9ec73d7e3f4e.ngrok-free.app/optimize', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'ngrok-skip-browser-warning': 'true',
         },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify({ text: prompt, model_name: "gpt-4" }),
       });
 
       const data = await response.json().catch(() => null);
@@ -114,11 +114,16 @@
       }
 
       console.log('✅ API Response:', data);
-
+      const co2SavedPercentage = (((data.co2emission_original - data.co2emission_balanced) / data.co2emission_original) * 100).toFixed(2) + '%';
+      const originalWordCount = prompt.trim().split(/\s+/).length;
+        const balancedWordCount = data.balanced.trim().split(/\s+/).length;
+const tokenSavedPercentage = (
+          ((originalWordCount - balancedWordCount) / originalWordCount) * 100
+        ).toFixed(2)
       return {
-        optimizedPrompt: data.optimizedPrompt || prompt,
-        tokensSaved: data.tokensSaved || 0,
-        co2Reduced: data.co2Reduced || 0,
+        optimizedPrompt: data.balanced || prompt,
+        tokensSaved: tokenSavedPercentage || 0,
+        co2Reduced: co2SavedPercentage || 0,
         success: true,
       };
     } catch (error) {
